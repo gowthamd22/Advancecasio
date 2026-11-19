@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Calculator Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #12141c;
+    --panel: #1a1d29;
+    --panel-2: #232838;
+    --key: #262b3c;
+    --key-hi: #2e3448;
+    --accent: #7c5cff;
+    --accent-2: #3ddbd9;
+    --warn: #ffb454;
+    --text: #eef0f8;
+    --text-dim: #8890ab;
+    --danger: #ff6b6b;
+    --radius: 16px;
+    --light-x: 30%;
+    --light-y: 20%;
+    --anim: 0.6;
+  }
+  body[data-theme="light"]{
+    --bg: #eef0f6;
+    --panel: #ffffff;
+    --panel-2: #f4f5fb;
+    --key: #ffffff;
+    --key-hi: #eceffb;
+    --text: #1b1e2b;
+    --text-dim: #6b7290;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at var(--light-x) var(--light-y), rgba(124,92,255,0.12), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:28px 14px;
+    transition:background .35s ease, color .35s ease;
+  }
+  .app{
+    width:100%;
+    max-width:420px;
+    background:var(--panel);
+    border-radius:24px;
+    padding:18px;
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    position:relative;
+    overflow:hidden;
+  }
+  body[data-theme="light"] .app{
+    box-shadow: 0 30px 60px -25px rgba(30,30,60,0.18), 0 0 0 1px rgba(20,20,40,0.05) inset;
+  }
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:15px;
+    letter-spacing:0.02em;
+  }
+  .brand .dot{
+    width:9px;height:9px;border-radius:50%;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    box-shadow:0 0 10px 2px rgba(124,92,255,0.55);
+  }
+  .icon-btn{
+    background:var(--panel-2);
+    border:none;
+    color:var(--text-dim);
+    width:32px;height:32px;
+    border-radius:10px;
+    display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+    transition:all .15s ease;
+  }
+  .icon-btn:hover{color:var(--text); background:var(--key-hi);}
+  .icon-row{display:flex;gap:6px;}
+
+  .modes{
+    display:flex;
+    background:var(--panel-2);
+    border-radius:12px;
+    padding:3px;
+    margin-bottom:12px;
+    gap:2px;
+  }
+  .mode-btn{
+    flex:1;
+    border:none;background:transparent;
+    color:var(--text-dim);
+    font-family:'Inter',sans-serif;
+    font-weight:500;
+    font-size:12.5px;
+    padding:8px 0;
+    border-radius:9px;
+    cursor:pointer;
+    transition:all .2s ease;
+  }
+  .mode-btn.active{
+    background:var(--key);
+    color:var(--text);
+    box-shadow:0 4px 14px -4px rgba(124,92,255,0.4), 0 0 0 1px rgba(124,92,255,0.25) inset;
+  }
+
+  .display{
+    background:var(--panel-2);
+    border-radius:16px;
+    padding:18px 16px 14px;
+    margin-bottom:12px;
+    min-height:102px;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-end;
+    gap:4px;
+    position:relative;
+  }
+  .base-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:2px 12px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;
+    color:var(--text-dim);
+    letter-spacing:0.03em;
+    margin-bottom:2px;
+  }
+  .expr{
+    font-family:'JetBrains Mono',monospace;
+    font-size:13px;
+    color:var(--text-dim);
+    min-height:16px;
+    white-space:nowrap;
+    overflow-x:auto;
+  }
+  .result{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:38px;
+    text-align:right;
+    overflow-x:auto;
+    white-space:nowrap;
+    letter-spacing:-0.01em;
+  }
+  .mem-flag{
+    position:absolute; top:12px; right:16px;
+    font-size:10px; font-weight:600; color:var(--accent-2);
+    letter-spacing:0.08em;
+  }
+
+  .mem-row{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:6px;
+    margin-bottom:8px;
+  }
+  .mem-row button{
+    font-size:11px;
+    padding:7px 0;
+    color:var(--text-dim);
+  }
+
+  .pad{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:8px;
+  }
+  .pad.sci{grid-template-columns:repeat(5,1fr);}
+  .pad.prog{grid-template-columns:repeat(4,1fr);}
+
+  button{
+    font-family:'Space Grotesk',sans-serif;
+    cursor:pointer;
+    border:none;
+    outline:none;
+    border-radius:12px;
+    background:var(--key);
+    color:var(--text);
+    font-size:16px;
+    font-weight:500;
+    padding:14px 0;
+    position:relative;
+    isolation:isolate;
+    overflow:hidden;
+    transition:transform .08s ease, box-shadow .15s ease, background .15s ease;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 6px 14px -8px rgba(0,0,0,0.5);
+  }
+  body[data-theme="light"] button{
+    box-shadow: 0 1px 0 rgba(255,255,255,0.7) inset, 0 4px 10px -6px rgba(30,30,60,0.25);
+  }
+  button::before{
+    content:"";
+    position:absolute; inset:0;
+    background:radial-gradient(120px 80px at var(--light-x) var(--light-y), rgba(255,255,255,0.14), transparent 70%);
+    opacity:calc(var(--anim));
+    pointer-events:none;
+  }
+  button:hover:not(:disabled){background:var(--key-hi);}
+  button:active:not(:disabled){transform:scale(0.95);}
+  button:disabled{cursor:not-allowed;}
+  .fn{ color:var(--text-dim); font-size:14px; background:var(--panel-2);}
+  .op{ color:var(--accent-2); background:var(--panel-2);}
+  .op.active-op{background:var(--accent-2); color:#0b1220;}
+  .eq{
+    background:linear-gradient(135deg,var(--accent),#5a3fe0);
+    color:#fff;
+    box-shadow:0 10px 22px -8px rgba(124,92,255,0.65);
+  }
+  .danger{color:var(--danger) !important;}
+
+  .glow-pulse{ animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 10px 22px -8px rgba(124,92,255,0.65);}
+    50%{ box-shadow:0 10px 30px -6px rgba(124,92,255,0.95);}
+  }
+  body[data-reduced-motion="true"] .glow-pulse{ animation:none; }
+  body[data-reduced-motion="true"] *{ transition:none !important; animation:none !important; }
+
+  .panel-toggle{
+    display:flex; gap:8px; margin-top:12px;
+  }
+  .panel-toggle button{
+    flex:1; font-size:11.5px; font-weight:500; padding:9px 0;
+    background:var(--panel-2); color:var(--text-dim);
+  }
+
+  .history{
+    max-height:160px; overflow-y:auto;
+    margin-top:10px; display:none;
+    border-top:1px solid rgba(128,128,150,0.15);
+    padding-top:8px;
+  }
+  .history.show{display:block;}
+  .history-head{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:11px; color:var(--text-dim); margin-bottom:6px; padding:0 4px;
+  }
+  .history-clear{
+    background:transparent !important; padding:2px 6px !important;
+    font-size:11px !important; color:var(--danger) !important; box-shadow:none !important;
+  }
+  .history-item{
+    display:flex; justify-content:space-between; gap:10px;
+    padding:7px 6px; border-radius:8px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:12px; color:var(--text-dim);
+    cursor:pointer;
+  }
+  .history-item:hover{background:var(--panel-2); color:var(--text);}
+  .history-empty{ text-align:center; font-size:12px; color:var(--text-dim); padding:14px 0;}
+
+  .settings{
+    display:none; margin-top:10px; padding-top:10px;
+    border-top:1px solid rgba(128,128,150,0.15);
+    font-size:12px; color:var(--text-dim);
+  }
+  .settings.show{display:block;}
+  .settings-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:6px 2px;
+  }
+  .preset-row, .theme-row{display:flex; gap:6px;}
+  .preset-row button, .theme-row button{
+    padding:6px 10px; font-size:11px; background:var(--panel-2); color:var(--text-dim);
+  }
+  .preset-row button.on, .theme-row button.on{background:var(--key-hi); color:var(--text);}
+  input[type="range"]{width:90px;}
+
+  @media (max-width:360px){
+    .result{font-size:30px;}
+    button{font-size:14px; padding:12px 0;}
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>Calculator Pro</div>
+    <div class="icon-row">
+      <button class="icon-btn" id="historyBtn" title="History" aria-label="Toggle history">⏱</button>
+      <button class="icon-btn" id="settingsBtn" title="Settings" aria-label="Toggle settings">⚙</button>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme" aria-label="Toggle light/dark theme">◐</button>
+    </div>
+  </div>
+
+  <div class="modes" role="tablist" aria-label="Calculator mode">
+    <button class="mode-btn active" data-mode="basic" role="tab" aria-selected="true">Basic</button>
+    <button class="mode-btn" data-mode="sci" role="tab" aria-selected="false">Scientific</button>
+    <button class="mode-btn" data-mode="prog" role="tab" aria-selected="false">Programmer</button>
+  </div>
+
+  <div class="display" id="display">
+    <div class="mem-flag" id="memFlag" style="visibility:hidden;">M</div>
+    <div class="base-grid" id="baseRow" style="display:none;">
+      <span id="baseHex">HEX 0</span>
+      <span id="baseDec">DEC 0</span>
+      <span id="baseOct">OCT 0</span>
+      <span id="baseBin">BIN 0</span>
+    </div>
+    <div class="expr" id="expr" aria-live="polite"></div>
+    <div class="result" id="result" tabindex="0" aria-live="polite">0</div>
+  </div>
+
+  <div class="mem-row" id="memRow">
+    <button data-mem="mc">MC</button>
+    <button data-mem="mr">MR</button>
+    <button data-mem="mplus">M+</button>
+    <button data-mem="mminus">M-</button>
+    <button data-mem="ms">MS</button>
+  </div>
+
+  <div class="pad" id="pad"></div>
+
+  <div class="panel-toggle">
+    <button id="expand" title="Open settings">Effects: <span id="effectsLabel">Standard</span></button>
+  </div>
+
+  <div class="history" id="historyPanel"></div>
+
+  <div class="settings" id="settingsPanel">
+    <div class="settings-row">
+      <span>Effects preset</span>
+      <div class="preset-row" id="presetRow">
+        <button data-preset="minimal">Minimal</button>
+        <button data-preset="standard" class="on">Standard</button>
+        <button data-preset="enthusiast">Enthusiast</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <span>Theme</span>
+      <div class="theme-row" id="themeRow">
+        <button data-theme-choice="dark" class="on">Dark</button>
+        <button data-theme-choice="light">Light</button>
+      </div>
+    </div>
+    <div class="settings-row">
+      <span>Reduced motion</span>
+      <input type="checkbox" id="reducedMotion">
+    </div>
+    <div class="settings-row">
+      <span>Precision (<span id="precisionVal">8</span>)</span>
+      <input type="range" id="precision" min="2" max="12" value="8">
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'calc_pro_v1';
+  const app = document.getElementById('app');
+  const exprEl = document.getElementById('expr');
+  const resultEl = document.getElementById('result');
+  const memFlag = document.getElementById('memFlag');
+  const pad = document.getElementById('pad');
+  const baseRow = document.getElementById('baseRow');
+  const baseHex = document.getElementById('baseHex');
+  const baseDec = document.getElementById('baseDec');
+  const baseOct = document.getElementById('baseOct');
+  const baseBin = document.getElementById('baseBin');
+  const historyPanel = document.getElementById('historyPanel');
+  const settingsPanel = document.getElementById('settingsPanel');
+
+  // Application state initialized with sensible defaults
+  let state = {
+    mode: 'basic',
+    expr: '',
+    memory: 0,
+    hasMemory: false,
+    angleUnit: 'rad',
+    programBase: 10,
+    pendingBit: null,
+    history: [],
+    precision: 8,
+    theme: 'dark',
+    preset: 'standard',
+    reducedMotion: false
+  };
+  let lastAnswer = 0;
+
+  // Load persisted history and user preferences from localStorage
+  function loadSaved(){
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      state = { ...state, ...saved, expr: '', pendingBit: null };
+      if (typeof saved.lastAnswer === 'number') lastAnswer = saved.lastAnswer;
+    } catch(e){}
+  }
+
+  // Persist history and user preferences to localStorage
+  function saveState(){
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        memory: state.memory,
+        hasMemory: state.hasMemory,
+        angleUnit: state.angleUnit,
+        history: state.history.slice(0, 100),
+        precision: state.precision,
+        theme: state.theme,
+        preset: state.preset,
+        reducedMotion: state.reducedMotion,
+        lastAnswer
+      }));
+    } catch(e){}
+  }
+
+  // Keypad definitions for Basic, Scientific, and Programmer modes
+  const basicKeys = [
+    {l:'C', cls:'fn', act:'clear'}, {l:'( )', cls:'fn', act:'parens'}, {l:'%', cls:'fn', act:'op', v:'%'}, {l:'÷', cls:'op', act:'op', v:'/'},
+    {l:'7', act:'digit'}, {l:'8', act:'digit'}, {l:'9', act:'digit'}, {l:'×', cls:'op', act:'op', v:'*'},
+    {l:'4', act:'digit'}, {l:'5', act:'digit'}, {l:'6', act:'digit'}, {l:'−', cls:'op', act:'op', v:'-'},
+    {l:'1', act:'digit'}, {l:'2', act:'digit'}, {l:'3', act:'digit'}, {l:'+', cls:'op', act:'op', v:'+'},
+    {l:'±', cls:'fn', act:'negate'}, {l:'0', act:'digit'}, {l:'.', act:'digit'}, {l:'=', cls:'eq glow-pulse', act:'equals'}
+  ];
+
+  const sciKeys = [
+    {l:'sin', cls:'fn', act:'fn', v:'sin'}, {l:'cos', cls:'fn', act:'fn', v:'cos'}, {l:'tan', cls:'fn', act:'fn', v:'tan'}, {l:'C', cls:'fn', act:'clear'}, {l:'⌫', cls:'fn', act:'back'},
+    {l:'ln', cls:'fn', act:'fn', v:'ln'}, {l:'log', cls:'fn', act:'fn', v:'log'}, {l:'√', cls:'fn', act:'fn', v:'sqrt'}, {l:'(', act:'char', v:'('}, {l:')', act:'char', v:')'},
+    {l:'xʸ', cls:'fn', act:'op', v:'^'}, {l:'7', act:'digit'}, {l:'8', act:'digit'}, {l:'9', act:'digit'}, {l:'÷', cls:'op', act:'op', v:'/'},
+    {l:'π', cls:'fn', act:'char', v:'pi'}, {l:'4', act:'digit'}, {l:'5', act:'digit'}, {l:'6', act:'digit'}, {l:'×', cls:'op', act:'op', v:'*'},
+    {l:'e', cls:'fn', act:'char', v:'e'}, {l:'1', act:'digit'}, {l:'2', act:'digit'}, {l:'3', act:'digit'}, {l:'−', cls:'op', act:'op', v:'-'},
+    {l:'x!', cls:'fn', act:'fn', v:'fact'}, {l:'±', cls:'fn', act:'negate'}, {l:'0', act:'digit'}, {l:'.', act:'digit'}, {l:'+', cls:'op', act:'op', v:'+'},
+    {l:state.angleUnit.toUpperCase(), cls:'fn', act:'angle', id:'angleBtn'}, {l:'%', cls:'fn', act:'op', v:'%'}, {l:'ANS', cls:'fn', act:'ans'}, {l:'=', cls:'eq glow-pulse', act:'equals'}
+  ];
+
+  const progKeys = [
+    {l:'HEX', cls:'fn', act:'base', v:16, id:'hexBtn'}, {l:'DEC', cls:'fn', act:'base', v:10, id:'decBtn'}, {l:'OCT', cls:'fn', act:'base', v:8, id:'octBtn'}, {l:'BIN', cls:'fn', act:'base', v:2, id:'binBtn'},
+    {l:'AND', cls:'fn', act:'bit', v:'and'}, {l:'OR', cls:'fn', act:'bit', v:'or'}, {l:'XOR', cls:'fn', act:'bit', v:'xor'}, {l:'NOT', cls:'fn', act:'bit', v:'not'},
+    {l:'A', act:'digit', minBase:16}, {l:'B', act:'digit', minBase:16}, {l:'C', cls:'fn', act:'clear'}, {l:'⌫', cls:'fn', act:'back'},
+    {l:'D', act:'digit', minBase:16}, {l:'E', act:'digit', minBase:16}, {l:'F', act:'digit', minBase:16}, {l:'÷', cls:'op', act:'op', v:'/'},
+    {l:'7', act:'digit', minBase:8}, {l:'8', act:'digit', minBase:10}, {l:'9', act:'digit', minBase:10}, {l:'×', cls:'op', act:'op', v:'*'},
+    {l:'4', act:'digit', minBase:8}, {l:'5', act:'digit', minBase:8}, {l:'6', act:'digit', minBase:8}, {l:'−', cls:'op', act:'op', v:'-'},
+    {l:'1', act:'digit', minBase:2}, {l:'2', act:'digit', minBase:8}, {l:'3', act:'digit', minBase:8}, {l:'+', cls:'op', act:'op', v:'+'},
+    {l:'≪', cls:'fn', act:'bit', v:'shl'}, {l:'0', act:'digit', minBase:2}, {l:'≫', cls:'fn', act:'bit', v:'shr'}, {l:'=', cls:'eq glow-pulse', act:'equals'}
+  ];
+
+  // Render active mode keypad
+  function renderPad(){
+    pad.className = 'pad' + (state.mode === 'sci' ? ' sci' : state.mode === 'prog' ? ' prog' : '');
+    const keys = state.mode === 'basic' ? basicKeys : state.mode === 'sci' ? sciKeys : progKeys;
+    pad.innerHTML = '';
+    keys.forEach(k => {
+      const b = document.createElement('button');
+      b.textContent = k.l;
+      if (k.cls) b.className = k.cls;
+      if (k.id) b.id = k.id;
+      if (state.mode === 'prog' && k.act === 'base' && k.v === state.programBase) {
+        b.classList.add('active-op');
+      }
+      if (state.mode === 'prog' && typeof k.minBase === 'number' && state.programBase < k.minBase) {
+        b.disabled = true;
+        b.style.opacity = '0.32';
+      }
+      b.addEventListener('click', () => handleAction(k));
+      pad.appendChild(b);
+    });
+    baseRow.style.display = state.mode === 'prog' ? 'grid' : 'none';
+    document.getElementById('memRow').style.display = state.mode === 'prog' ? 'none' : 'grid';
+  }
+
+  // Dispatch keypad button actions
+  function handleAction(k){
+    switch(k.act){
+      case 'digit': appendChar(k.l); break;
+      case 'char': appendChar(k.v); break;
+      case 'op': appendChar(k.v); break;
+      case 'clear': state.expr = ''; state.pendingBit = null; updateDisplay(); break;
+      case 'back': state.expr = state.expr.slice(0, -1); updateDisplay(); break;
+      case 'negate': negate(); break;
+      case 'parens': smartParen(); break;
+      case 'fn': appendFn(k.v); break;
+      case 'equals': evaluate(); break;
+      case 'angle': toggleAngle(); break;
+      case 'ans': appendChar(String(lastAnswer)); break;
+      case 'base': setBase(k.v); break;
+      case 'bit': applyBitOp(k.v); break;
+    }
+  }
+
+  function appendChar(c){
+    state.expr += c;
+    updateDisplay();
+  }
+
+  // Toggle sign of trailing number or insert unary minus
+  function negate(){
+    const m = state.expr.match(/(-?\d+\.?\d*)$/);
+    if (m) {
+      const num = m[1];
+      const start = state.expr.length - num.length;
+      const negged = num.startsWith('-') ? num.slice(1) : '-' + num;
+      state.expr = state.expr.slice(0, start) + negged;
+    } else if (!state.expr || /[+\-*/(]$/.test(state.expr)) {
+      state.expr += '-';
+    }
+    updateDisplay();
+  }
+
+  // Context-aware parenthesis insertion
+  function smartParen(){
+    const open = (state.expr.match(/\(/g) || []).length;
+    const close = (state.expr.match(/\)/g) || []).length;
+    state.expr += (open > close && /[\d)]$/.test(state.expr)) ? ')' : '(';
+    updateDisplay();
+  }
+
+  function appendFn(name){
+    if (name === 'fact') {
+      state.expr += '!';
+    } else {
+      const map = { sin:'sin(', cos:'cos(', tan:'tan(', ln:'ln(', log:'log(', sqrt:'sqrt(' };
+      state.expr += map[name];
+    }
+    updateDisplay();
+  }
+
+  function toggleAngle(){
+    state.angleUnit = state.angleUnit === 'rad' ? 'deg' : 'rad';
+    const btn = document.getElementById('angleBtn');
+    if (btn) btn.textContent = state.angleUnit.toUpperCase();
+    saveState();
+  }
+
+  function factorial(n){
+    if (!Number.isInteger(n) || n < 0 || n > 170) return NaN;
+    let r = 1;
+    for (let i = 2; i <= n; i++) r *= i;
+    return r;
+  }
+
+  // Safe mathematical expression parser & evaluator
+  function safeEval(expr){
+    let e = expr.replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/');
+    e = e.replace(/(\d+(?:\.\d+)?|\))\s*!/g, 'fact($1)');
+    e = e.replace(/\bpi\b/gi, 'PI');
+    e = e.replace(/(?<![a-zA-Z0-9_])e(?![a-zA-Z0-9_(])/g, 'E');
+    e = e.replace(/\^/g, '**');
+    e = e.replace(/(\d|\))(\()/g, '$1*$2');
+    e = e.replace(/(\))(\d|PI|E|sin|cos|tan|ln|log|sqrt)/g, '$1*$2');
+    e = e.replace(/(\d)(PI|E|sin|cos|tan|ln|log|sqrt)/g, '$1*$2');
+    e = e.replace(/%/g, '/100');
+
+    const angle = state.angleUnit;
+    const wrapTrig = (fn) => (x) => {
+      const rad = angle === 'deg' ? (x * Math.PI) / 180 : x;
+      const val = Math[fn](rad);
+      return Math.abs(val) < 1e-15 ? 0 : val;
+    };
+
+    const ctx = {
+      sin: wrapTrig('sin'),
+      cos: wrapTrig('cos'),
+      tan: wrapTrig('tan'),
+      ln: Math.log,
+      log: Math.log10,
+      sqrt: Math.sqrt,
+      fact: factorial,
+      PI: Math.PI,
+      E: Math.E
+    };
+
+    if (!/^[0-9+\-*/%.() a-zA-Z]*$/.test(e)) throw new Error('Invalid characters');
+    const allowedNames = Object.keys(ctx).join('|');
+    const stripped = e.replace(new RegExp(`\\b(${allowedNames})\\b`, 'g'), '');
+    if (/[a-zA-Z]/.test(stripped)) throw new Error('Unknown identifier');
+
+    const fn = new Function(...Object.keys(ctx), `"use strict"; return (${e});`);
+    return fn(...Object.values(ctx));
+  }
+
+  // Evaluate expression in either standard/scientific or programmer mode
+  function evaluate(){
+    if (!state.expr && !state.pendingBit) return;
+    try {
+      if (state.mode === 'prog') {
+        const right = state.expr ? parseInt(state.expr, state.programBase) : 0;
+        if (Number.isNaN(right)) throw new Error('Invalid base number');
+        let resVal = right;
+        let label = state.expr || '0';
+        if (state.pendingBit) {
+          const left = state.pendingBit.left;
+          const op = state.pendingBit.op;
+          if (op === 'and') resVal = left & right;
+          else if (op === 'or') resVal = left | right;
+          else if (op === 'xor') resVal = left ^ right;
+          else if (op === 'shl') resVal = left << right;
+          else if (op === 'shr') resVal = left >> right;
+          const sym = { and:'AND', or:'OR', xor:'XOR', shl:'≪', shr:'≫' }[op];
+          label = `${left.toString(state.programBase).toUpperCase()} ${sym} ${right.toString(state.programBase).toUpperCase()}`;
+          state.pendingBit = null;
+        }
+        const formatted = (resVal >>> 0).toString(state.programBase).toUpperCase();
+        pushHistory(label, formatted);
+        state.expr = formatted;
+        updateDisplay(true);
+        return;
+      }
+
+      const val = safeEval(state.expr);
+      if (typeof val !== 'number' || !Number.isFinite(val)) throw new Error('Math error');
+      const factor = 10 ** state.precision;
+      const rounded = Math.round(val * factor) / factor;
+      const formatted = String(rounded);
+      pushHistory(state.expr, formatted);
+      lastAnswer = rounded;
+      state.expr = formatted;
+      saveState();
+      updateDisplay(true);
+    } catch(err){
+      resultEl.textContent = 'Error';
+      resultEl.classList.add('danger');
+      setTimeout(() => {
+        resultEl.classList.remove('danger');
+        updateDisplay();
+      }, 800);
+    }
+  }
+
+  // Convert current value across number bases in Programmer mode
+  function setBase(nextBase){
+    if (nextBase === state.programBase) return;
+    const currentDec = state.expr ? parseInt(state.expr, state.programBase) : 0;
+    state.programBase = nextBase;
+    state.expr = Number.isNaN(currentDec) ? '' : (currentDec >>> 0).toString(nextBase).toUpperCase();
+    renderPad();
+    updateDisplay();
+  }
+
+  // Apply unary or binary bitwise operations
+  function applyBitOp(op){
+    const cur = state.expr ? parseInt(state.expr, state.programBase) : 0;
+    if (Number.isNaN(cur)) return;
+    if (op === 'not') {
+      const notVal = (~cur >>> 0).toString(state.programBase).toUpperCase();
+      pushHistory(`NOT ${cur.toString(state.programBase).toUpperCase()}`, notVal);
+      state.expr = notVal;
+      updateDisplay(true);
+      return;
+    }
+    state.pendingBit = { op, left: cur };
+    state.expr = '';
+    updateDisplay();
+  }
+
+  // Synchronize DOM display elements with current state
+  function updateDisplay(fromEquals = false){
+    if (state.mode === 'prog') {
+      const dec = state.expr ? (parseInt(state.expr, state.programBase) || 0) : 0;
+      const u = dec >>> 0;
+      baseHex.textContent = 'HEX ' + u.toString(16).toUpperCase();
+      baseDec.textContent = 'DEC ' + dec.toString(10);
+      baseOct.textContent = 'OCT ' + u.toString(8);
+      baseBin.textContent = 'BIN ' + u.toString(2);
+      if (state.pendingBit) {
+        const sym = { and:'AND', or:'OR', xor:'XOR', shl:'≪', shr:'≫' }[state.pendingBit.op];
+        exprEl.textContent = `${state.pendingBit.left.toString(state.programBase).toUpperCase()} ${sym}`;
+      } else {
+        exprEl.textContent = fromEquals ? '' : state.expr;
+      }
+      resultEl.textContent = state.expr || '0';
+    } else {
+      exprEl.textContent = fromEquals ? '' : state.expr;
+      resultEl.textContent = state.expr || '0';
+    }
+    memFlag.style.visibility = state.hasMemory ? 'visible' : 'hidden';
+  }
+
+  // Memory register handlers
+  document.getElementById('memRow').addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+    const action = btn.dataset.mem;
+    let current = 0;
+    try { current = Number(safeEval(resultEl.textContent)) || 0; } catch(err){ current = 0; }
+    if (action === 'mc') { state.memory = 0; state.hasMemory = false; }
+    if (action === 'mr') { state.expr = String(state.memory); updateDisplay(); }
+    if (action === 'mplus') { state.memory += current; state.hasMemory = true; }
+    if (action === 'mminus') { state.memory -= current; state.hasMemory = true; }
+    if (action === 'ms') { state.memory = current; state.hasMemory = true; }
+    saveState();
+    updateDisplay();
+  });
+
+  // Calculation history list management
+  function pushHistory(expr, res){
+    state.history.unshift({ expr, res });
+    if (state.history.length > 100) state.history.pop();
+    renderHistory();
+  }
+
+  function renderHistory(){
+    if (!state.history.length){
+      historyPanel.innerHTML = '<div class="history-empty">No calculations yet</div>';
+      return;
+    }
+    const itemsHtml = state.history.map((h, i) =>
+      `<div class="history-item" data-idx="${i}">
+        <span>${escapeHtml(h.expr)}</span><span>= ${escapeHtml(h.res)}</span>
+      </div>`
+    ).join('');
+    historyPanel.innerHTML = `
+      <div class="history-head">
+        <span>Recent</span>
+        <button type="button" class="history-clear" id="clearHistoryBtn">Clear</button>
+      </div>
+      ${itemsHtml}
+    `;
+    historyPanel.querySelectorAll('.history-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const item = state.history[Number(el.dataset.idx)];
+        if (item) {
+          state.expr = item.res;
+          updateDisplay();
+        }
+      });
+    });
+    document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+      state.history = [];
+      saveState();
+      renderHistory();
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  document.getElementById('historyBtn').addEventListener('click', () => {
+    historyPanel.classList.toggle('show');
+    settingsPanel.classList.remove('show');
+  });
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+    settingsPanel.classList.toggle('show');
+    historyPanel.classList.remove('show');
+  });
+  document.getElementById('expand').addEventListener('click', () => {
+    settingsPanel.classList.toggle('show');
+    historyPanel.classList.remove('show');
+  });
+
+  // Mode switcher
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.mode-btn').forEach(b => {
+        b.classList.remove('active');
+        b.setAttribute('aria-selected', 'false');
+      });
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
+      state.mode = btn.dataset.mode;
+      state.expr = '';
+      state.pendingBit = null;
+      renderPad();
+      updateDisplay();
+    });
+  });
+
+  // Theme, effects presets, and reduced motion controls
+  const themeBtn = document.getElementById('themeBtn');
+  function setTheme(t){
+    state.theme = t === 'light' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', state.theme);
+    document.querySelectorAll('#themeRow button').forEach(b => {
+      b.classList.toggle('on', b.dataset.themeChoice === state.theme);
+    });
+    themeBtn.textContent = state.theme === 'dark' ? '◐' : '◑';
+    saveState();
+  }
+
+  function setPreset(preset){
+    state.preset = ['minimal', 'standard', 'enthusiast'].includes(preset) ? preset : 'standard';
+    document.querySelectorAll('#presetRow button').forEach(x => {
+      x.classList.toggle('on', x.dataset.preset === state.preset);
+    });
+    document.getElementById('effectsLabel').textContent =
+      state.preset[0].toUpperCase() + state.preset.slice(1);
+    document.documentElement.style.setProperty(
+      '--anim',
+      state.preset === 'minimal' ? '0' : state.preset === 'enthusiast' ? '1' : '0.6'
+    );
+    document.querySelectorAll('.glow-pulse').forEach(el => {
+      el.style.animationDuration =
+        state.preset === 'enthusiast' ? '1s' : state.preset === 'minimal' ? '0s' : '1.6s';
+    });
+    saveState();
+  }
+
+  function setReducedMotion(enabled){
+    state.reducedMotion = Boolean(enabled);
+    document.getElementById('reducedMotion').checked = state.reducedMotion;
+    document.body.setAttribute('data-reduced-motion', state.reducedMotion ? 'true' : 'false');
+    saveState();
+  }
+
+  themeBtn.addEventListener('click', () => {
+    setTheme(state.theme === 'dark' ? 'light' : 'dark');
+  });
+  document.getElementById('themeRow').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (b) setTheme(b.dataset.themeChoice);
+  });
+  document.getElementById('presetRow').addEventListener('click', e => {
+    const b = e.target.closest('button');
+    if (b) setPreset(b.dataset.preset);
+  });
+  document.getElementById('reducedMotion').addEventListener('change', e => {
+    setReducedMotion(e.target.checked);
+  });
+
+  const precisionSlider = document.getElementById('precision');
+  const precisionVal = document.getElementById('precisionVal');
+  precisionSlider.addEventListener('input', e => {
+    state.precision = parseInt(e.target.value, 10);
+    precisionVal.textContent = String(state.precision);
+    saveState();
+  });
+
+  // Dynamic ambient lighting effect
+  let sweepT = 0;
+  function autoSweep(){
+    sweepT += 0.004;
+    const x = 50 + Math.sin(sweepT) * 30;
+    const y = 30 + Math.cos(sweepT * 0.7) * 15;
+    document.documentElement.style.setProperty('--light-x', x + '%');
+    document.documentElement.style.setProperty('--light-y', y + '%');
+    requestAnimationFrame(autoSweep);
+  }
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches && !state.reducedMotion) {
+    requestAnimationFrame(autoSweep);
+  }
+  app.addEventListener('pointermove', (e) => {
+    const r = app.getBoundingClientRect();
+    const x = ((e.clientX - r.left) / r.width) * 100;
+    const y = ((e.clientY - r.top) / r.height) * 100;
+    document.documentElement.style.setProperty('--light-x', x + '%');
+    document.documentElement.style.setProperty('--light-y', y + '%');
+  });
+
+  // Full physical keyboard bindings
+  window.addEventListener('keydown', (e) => {
+    if (e.target.tagName === 'INPUT') return;
+    const k = e.key;
+    if (/[0-9]/.test(k)) { appendChar(k); return; }
+    if (state.mode === 'prog' && /[a-fA-F]/.test(k)) { appendChar(k.toUpperCase()); return; }
+    if (['+','-','*','/','.','(',')','%'].includes(k)) { appendChar(k); return; }
+    if (k === 'Enter' || k === '=') { e.preventDefault(); evaluate(); return; }
+    if (k === 'Backspace') { state.expr = state.expr.slice(0, -1); updateDisplay(); return; }
+    if (k === 'Escape') { state.expr = ''; state.pendingBit = null; updateDisplay(); return; }
+  });
+
+  // Boot sequence
+  loadSaved();
+  precisionSlider.value = String(state.precision);
+  precisionVal.textContent = String(state.precision);
+  setTheme(state.theme);
+  setPreset(state.preset);
+  setReducedMotion(state.reducedMotion || window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  renderPad();
+  updateDisplay();
+  renderHistory();
+})();
+</script>
+</body>
+</html>
